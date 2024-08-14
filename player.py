@@ -13,13 +13,16 @@ class Player:
         self.idle_rangle = 0
         self.shooting_rangle = 8
         self.shooting = False
+        self.moving = False
 
+        # Load images
         idle_sprite_sheet_img = pg.image.load('assets/idle.png').convert_alpha()
         idle_sprite_sheet = ss.SpriteSheet(idle_sprite_sheet_img)
 
         shooting_sprite_sheet_img = pg.image.load('assets/shooting_fix.png').convert_alpha()
         shooting_sprite_sheet = ss.SpriteSheet(shooting_sprite_sheet_img)
 
+        # Animation Vars
         self.idle_animation_lists = []
         self.shooting_animation_lists = []
         animation_steps = 8
@@ -28,6 +31,7 @@ class Player:
         self.current_idle_step = 0
         self.current_shooting_step = 0
 
+        # Process sprite sheets into lists
         for i in range(idle_animation_rows):
             tmp_list = []
             for j in range(animation_steps):
@@ -40,10 +44,12 @@ class Player:
                 tmp_list.append(shooting_sprite_sheet.get_image(i, j, 48, 64, 3))
             self.shooting_animation_lists.append(tmp_list)
 
+        # Set player position to center
         self.x = (REAL_WIDTH // 2)
         self.y = (REAL_HEIGHT // 2)
 
     def update(self):
+        self.movement()
         self.mouse_control()
         # angle normalization to match assets/idle.png
         self.idle_rangle = int(abs(((self.angle + 150) % 360) - 360) // 60)
@@ -64,50 +70,38 @@ class Player:
         pg.draw.line(self.screen, WHITE, (self.x, self.y), (self.mx, self.my))
 
     def movement(self):
-        pass
-
-        '''
-        sin_a = math.sin(self.angle)
-        cos_a = math.cos(self.angle)
         dx, dy = 0, 0
         speed = PLAYER_SPEED * self.game.delta_time
-        speed_sin = speed * sin_a
-        speed_cos = speed * cos_a
 
         keys = pg.key.get_pressed()
         num_key_pressed = -1
         if keys[pg.K_w]:
             num_key_pressed += 1
-            dx += speed_cos
-            dy += speed_sin
+            dy += -speed
         if keys[pg.K_s]:
             num_key_pressed += 1
-            dx += -speed_cos
-            dy += -speed_sin
+            dy += speed
         if keys[pg.K_a]:
             num_key_pressed += 1
-            dx += speed_sin
-            dy += -speed_cos
+            dx += -speed
         if keys[pg.K_d]:
             num_key_pressed += 1
-            dx += -speed_sin
-            dy += speed_cos
+            dx += speed
 
         # diag move correction
-        #if num_key_pressed:
-        #    dx *= self.diag_move_corr
-        #    dy *= self.diag_move_corr
+        self.diag_move_corr = 0.70710678118
+        if num_key_pressed:
+            dx *= self.diag_move_corr
+            dy *= self.diag_move_corr
 
-        self.check_wall_collision(dx, dy)
-
-        #if keys[pg.K_LEFT]:
-        #    self.angle -= PLAYER_ROT_SPEED * self.game.delta_time
-        #if keys[pg.K_RIGHT]:
-        #    self.angle += PLAYER_ROT_SPEED * self.game.delta_time
-        '''
+        self.x += dx
+        self.y += dy
 
     def mouse_control(self):
+        # Get mouse pos
         self.mx, self.my = pg.mouse.get_pos()
+        # Compute angle
         self.angle = math.atan2(self.x-self.mx, self.y-self.my)
+        # Convert from radians into degrees
         self.angle %= 2*math.pi
         self.angle = math.degrees(self.angle)
