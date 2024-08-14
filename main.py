@@ -79,6 +79,10 @@ class Game:
 
     def check_events(self):
         for event in pg.event.get():
+            if event.type == pg.MOUSEBUTTONDOWN:
+                self.player.shooting = True
+            if event.type == pg.MOUSEBUTTONUP:
+                self.player.shooting = False
             if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
                 pg.quit()
                 sys.exit()

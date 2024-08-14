@@ -6,7 +6,10 @@ REAL_RES = REAL_WIDTH, REAL_HEIGHT= 1000, 750
 # RES = WIDTH, HEIGHT = 1920, 1080
 HALF_WIDTH = WIDTH // 2
 HALF_HEIGHT = HEIGHT // 2
-FPS = 60
+
+DT_SHIFT = 10 # bitshift to divide by 1024
+FPS = 60 # how fast you want the game to run
+ANIMATION_DT = 1000 # how long before next animation frame
 
 PLAYER_POS = 1.5, 5  # mini_map
 PLAYER_ANGLE = 0
