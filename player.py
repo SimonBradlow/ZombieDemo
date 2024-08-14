@@ -11,20 +11,25 @@ class Player:
         self.mx, self.my = (0, 0)
         self.angle = PLAYER_ANGLE
         self.idle_rangle = 0
-        self.shooting_rangle = 8
+        self.shooting_rangle = 0
+        self.moving_rangle = 0
         self.shooting = False
         self.moving = False
 
         # Load images
-        idle_sprite_sheet_img = pg.image.load('assets/idle.png').convert_alpha()
+        idle_sprite_sheet_img = pg.image.load('assets/idle_gun.png').convert_alpha()
         idle_sprite_sheet = ss.SpriteSheet(idle_sprite_sheet_img)
 
         shooting_sprite_sheet_img = pg.image.load('assets/shooting_fix.png').convert_alpha()
         shooting_sprite_sheet = ss.SpriteSheet(shooting_sprite_sheet_img)
 
+        moving_sprite_sheet_img = pg.image.load('assets/run_gun.png').convert_alpha()
+        moving_sprite_sheet = ss.SpriteSheet(moving_sprite_sheet_img)
+
         # Animation Vars
         self.idle_animation_lists = []
         self.shooting_animation_lists = []
+        self.moving_animation_lists = []
         animation_steps = 8
         idle_animation_rows = 6
         shooting_animation_rows = 8
@@ -44,6 +49,12 @@ class Player:
                 tmp_list.append(shooting_sprite_sheet.get_image(i, j, 48, 64, 3))
             self.shooting_animation_lists.append(tmp_list)
 
+        for i in range(shooting_animation_rows):
+            tmp_list = []
+            for j in range(animation_steps):
+                tmp_list.append(moving_sprite_sheet.get_image(i, j, 48, 64, 3))
+            self.moving_animation_lists.append(tmp_list)
+
         # Set player position to center
         self.x = (REAL_WIDTH // 2)
         self.y = (REAL_HEIGHT // 2)
@@ -62,12 +73,14 @@ class Player:
         # draw sprite
         if self.shooting: # shooting
             self.screen.blit(self.shooting_animation_lists[self.shooting_rangle][self.current_shooting_step//6], (self.x-72, self.y-96))
+        elif self.moving: #moving
+            self.screen.blit(self.moving_animation_lists[self.moving_rangle][self.current_shooting_step//6], (self.x-72, self.y-96))
         else: # idle
             self.screen.blit(self.idle_animation_lists[self.idle_rangle][self.current_idle_step//16], (self.x-72, self.y-96))
 
         # draw line for mouse angle
-        WHITE = (255, 255, 255)
-        pg.draw.line(self.screen, WHITE, (self.x, self.y), (self.mx, self.my))
+        #WHITE = (255, 255, 255)
+        #pg.draw.line(self.screen, WHITE, (self.x, self.y), (self.mx, self.my))
 
     def movement(self):
         dx, dy = 0, 0
@@ -75,24 +88,43 @@ class Player:
 
         keys = pg.key.get_pressed()
         num_key_pressed = -1
-        if keys[pg.K_w]:
+        if keys[pg.K_w] and not self.shooting:
+            self.moving = True
+            self.moving_rangle = 3
             num_key_pressed += 1
-            dy += -speed
-        if keys[pg.K_s]:
+            if self.y > 115:
+                dy += -speed
+        if keys[pg.K_s] and not self.shooting:
+            self.moving = True
+            self.moving_rangle = 0
             num_key_pressed += 1
-            dy += speed
-        if keys[pg.K_a]:
+            if self.y < (REAL_HEIGHT-165):
+                dy += speed
+        if keys[pg.K_a] and not self.shooting:
+            self.moving = True
+            self.moving_rangle = 7
             num_key_pressed += 1
-            dx += -speed
-        if keys[pg.K_d]:
+            if self.x > 125:
+                dx += -speed
+        if keys[pg.K_d] and not self.shooting:
+            self.moving = True
+            self.moving_rangle = 6
             num_key_pressed += 1
-            dx += speed
+            if self.x < (REAL_WIDTH-125):
+                dx += speed
+
+        if num_key_pressed == -1:
+            self.moving = False
 
         # diag move correction
         self.diag_move_corr = 0.70710678118
         if num_key_pressed:
             dx *= self.diag_move_corr
             dy *= self.diag_move_corr
+            if ((dx < 0) and (dy < 0)): self.moving_rangle = 2
+            if ((dx > 0) and (dy < 0)): self.moving_rangle = 4
+            if ((dx > 0) and (dy > 0)): self.moving_rangle = 5
+            if ((dx < 0) and (dy > 0)): self.moving_rangle = 1
 
         self.x += dx
         self.y += dy

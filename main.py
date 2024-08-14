@@ -20,6 +20,11 @@ class Game:
         '''
         self.clock = pg.time.Clock()
         self.delta_time = 1
+
+        self.bg = pg.image.load('assets/map.png').convert_alpha()
+        self.bush = pg.image.load('assets/bush.png').convert_alpha()
+        self.tree = pg.image.load('assets/tree.png').convert_alpha()
+        
         self.new_game()
         '''
         self.ctx = moderngl.create_context()
@@ -72,10 +77,15 @@ class Game:
         pg.display.set_caption(f'{self.clock.get_fps() :.1f}')
 
     def draw(self):
-        self.screen.fill('black')
+        self.screen.fill((114, 117, 27))
+        self.screen.blit(self.bg, (0, 0))
+
+        self.player.draw()
+
+        self.screen.blit(self.tree, (0, 0))
+        self.screen.blit(self.bush, (125, (REAL_HEIGHT-120)))
         #self.object_renderer.draw()
         #self.map.draw()
-        self.player.draw()
 
     def check_events(self):
         for event in pg.event.get():
