@@ -8,8 +8,18 @@ class Player:
         self.game = game
         self.screen = game.screen
         self.x, self.y = PLAYER_POS
-        self.mx, self.my = (0, 0)
+        self.mx, self.my = (0, 0) # Mouse position
         self.angle = PLAYER_ANGLE
+        self.SPRITE_WIDTH, self.SPRITE_HEIGHT, self.SPRITE_SCALE = 48, 64, 3
+        # Offset of center of sprite from (0,0) of sprite
+        self.X_OFFSET = (self.SPRITE_WIDTH*self.SPRITE_SCALE)/2
+        self.Y_OFFSET = (self.SPRITE_HEIGHT*self.SPRITE_SCALE)/2
+        # Coordinates of top left of sprite, this is where we draw the sprite
+        self.truex = self.x - self.X_OFFSET
+        self.truey = self.y - self.Y_OFFSET
+
+        # Converted relative angle for sprite rotation
+        # Not actual angles, but the index of the sprites rotation
         self.idle_rangle = 0
         self.shooting_rangle = 0
         self.moving_rangle = 0
@@ -27,12 +37,17 @@ class Player:
         moving_sprite_sheet = ss.SpriteSheet(moving_sprite_sheet_img)
 
         # Animation Vars
+        # 2d arrays storing sprite lists for each direction
         self.idle_animation_lists = []
         self.shooting_animation_lists = []
         self.moving_animation_lists = []
+
+        # number of frames per animation
         animation_steps = 8
+        # number of rows per sprite
         idle_animation_rows = 6
         shooting_animation_rows = 8
+        # current frame of animation
         self.current_idle_step = 0
         self.current_shooting_step = 0
 
@@ -40,19 +55,28 @@ class Player:
         for i in range(idle_animation_rows):
             tmp_list = []
             for j in range(animation_steps):
-                tmp_list.append(idle_sprite_sheet.get_image(i, j, 48, 64, 3))
+                tmp_list.append(idle_sprite_sheet.get_image(i, j, 
+                                                            self.SPRITE_WIDTH, 
+                                                            self.SPRITE_HEIGHT, 
+                                                            self.SPRITE_SCALE))
             self.idle_animation_lists.append(tmp_list)
 
         for i in range(shooting_animation_rows):
             tmp_list = []
             for j in range(animation_steps):
-                tmp_list.append(shooting_sprite_sheet.get_image(i, j, 48, 64, 3))
+                tmp_list.append(shooting_sprite_sheet.get_image(i, j, 
+                                                            self.SPRITE_WIDTH, 
+                                                            self.SPRITE_HEIGHT, 
+                                                            self.SPRITE_SCALE))
             self.shooting_animation_lists.append(tmp_list)
 
         for i in range(shooting_animation_rows):
             tmp_list = []
             for j in range(animation_steps):
-                tmp_list.append(moving_sprite_sheet.get_image(i, j, 48, 64, 3))
+                tmp_list.append(moving_sprite_sheet.get_image(i, j, 
+                                                            self.SPRITE_WIDTH, 
+                                                            self.SPRITE_HEIGHT, 
+                                                            self.SPRITE_SCALE))
             self.moving_animation_lists.append(tmp_list)
 
         # Set player position to center
@@ -62,21 +86,26 @@ class Player:
     def update(self):
         self.movement()
         self.mouse_control()
+
         # angle normalization to match assets/idle.png
         self.idle_rangle = int(abs(((self.angle + 150) % 360) - 360) // 60)
         self.shooting_rangle = int(abs(((self.angle + 157.5) % 360) - 360) // 45)
+
         # hacky deltatime nonsense - PLEASE FIX
-        self.current_idle_step = (self.current_idle_step+1)%128
-        self.current_shooting_step = (self.current_shooting_step+1)%48
+        self.current_idle_step = (self.current_idle_step+1) % 128
+        self.current_shooting_step = (self.current_shooting_step+1) % 48
 
     def draw(self):
         # draw sprite
         if self.shooting: # shooting
-            self.screen.blit(self.shooting_animation_lists[self.shooting_rangle][self.current_shooting_step//6], (self.x-72, self.y-96))
+            self.screen.blit(self.shooting_animation_lists[self.shooting_rangle][self.current_shooting_step//6], 
+                             (self.truex, self.truey))
         elif self.moving: #moving
-            self.screen.blit(self.moving_animation_lists[self.moving_rangle][self.current_shooting_step//6], (self.x-72, self.y-96))
+            self.screen.blit(self.moving_animation_lists[self.moving_rangle][self.current_shooting_step//6], 
+                             (self.truex, self.truey))
         else: # idle
-            self.screen.blit(self.idle_animation_lists[self.idle_rangle][self.current_idle_step//16], (self.x-72, self.y-96))
+            self.screen.blit(self.idle_animation_lists[self.idle_rangle][self.current_idle_step//16], 
+                             (self.truex, self.truey))
 
         # draw line for mouse angle
         #WHITE = (255, 255, 255)
@@ -89,45 +118,51 @@ class Player:
         keys = pg.key.get_pressed()
         num_key_pressed = -1
         if keys[pg.K_w] and not self.shooting:
-            self.moving = True
-            self.moving_rangle = 3
-            num_key_pressed += 1
-            if self.y > 115:
+            self.moving = True # Update flag
+            self.moving_rangle = 3 # Assign sprite rotation index
+            num_key_pressed += 1 # key press counter for diagonal movement
+            if self.y > REAL_HEIGHT/6: # bounding box
                 dy += -speed
         if keys[pg.K_s] and not self.shooting:
             self.moving = True
             self.moving_rangle = 0
             num_key_pressed += 1
-            if self.y < (REAL_HEIGHT-165):
+            if self.y < (REAL_HEIGHT/6)*5:
                 dy += speed
         if keys[pg.K_a] and not self.shooting:
             self.moving = True
             self.moving_rangle = 7
             num_key_pressed += 1
-            if self.x > 125:
+            if self.x > REAL_WIDTH/8:
                 dx += -speed
         if keys[pg.K_d] and not self.shooting:
             self.moving = True
             self.moving_rangle = 6
             num_key_pressed += 1
-            if self.x < (REAL_WIDTH-125):
+            if self.x < (REAL_WIDTH/8)*7:
                 dx += speed
 
         if num_key_pressed == -1:
             self.moving = False
 
         # diag move correction
+        # sin(45) and cos(45) are the same magic number
         self.diag_move_corr = 0.70710678118
         if num_key_pressed:
+            # multiply our velocities by the magic number
             dx *= self.diag_move_corr
             dy *= self.diag_move_corr
+            # Hacky fix to switch sprite angle for diagonals
             if ((dx < 0) and (dy < 0)): self.moving_rangle = 2
             if ((dx > 0) and (dy < 0)): self.moving_rangle = 4
             if ((dx > 0) and (dy > 0)): self.moving_rangle = 5
             if ((dx < 0) and (dy > 0)): self.moving_rangle = 1
 
+        #update position
         self.x += dx
         self.y += dy
+        self.truex = self.x - self.X_OFFSET
+        self.truey = self.y - self.Y_OFFSET
 
     def mouse_control(self):
         # Get mouse pos
