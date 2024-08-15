@@ -10,7 +10,7 @@ class Player:
         self.x, self.y = PLAYER_POS
         self.mx, self.my = (0, 0) # Mouse position
         self.angle = PLAYER_ANGLE
-        self.SPRITE_WIDTH, self.SPRITE_HEIGHT, self.SPRITE_SCALE = 48, 64, 3
+        self.SPRITE_WIDTH, self.SPRITE_HEIGHT, self.SPRITE_SCALE = 48, 64, 1
         # Offset of center of sprite from (0,0) of sprite
         self.X_OFFSET = (self.SPRITE_WIDTH*self.SPRITE_SCALE)/2
         self.Y_OFFSET = (self.SPRITE_HEIGHT*self.SPRITE_SCALE)/2
@@ -80,8 +80,8 @@ class Player:
             self.moving_animation_lists.append(tmp_list)
 
         # Set player position to center
-        self.x = (REAL_WIDTH // 2)
-        self.y = (REAL_HEIGHT // 2)
+        self.x = (WIDTH // 2)
+        self.y = (HEIGHT // 2)
 
     def update(self):
         self.movement()
@@ -108,8 +108,8 @@ class Player:
                              (self.truex, self.truey))
 
         # draw line for mouse angle
-        #WHITE = (255, 255, 255)
-        #pg.draw.line(self.screen, WHITE, (self.x, self.y), (self.mx, self.my))
+        WHITE = (255, 255, 255)
+        pg.draw.line(self.screen, WHITE, (self.x, self.y), (self.mx, self.my))
 
     def movement(self):
         dx, dy = 0, 0

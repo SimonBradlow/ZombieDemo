@@ -1,5 +1,5 @@
 import struct
-#import moderngl
+import moderngl
 import pygame as pg
 import sys
 from settings import *
@@ -9,24 +9,30 @@ class Game:
     def __init__(self):
         pg.init()
         #pg.mouse.set_visible(False)
-        self.screen = pg.display.set_mode(REAL_RES)
-        '''
+        #self.screen = pg.display.set_mode(REAL_RES)
+
+        # GL_CONTEXT stuff for macos compilation
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MINOR_VERSION, 3)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_PROFILE_MASK, pg.GL_CONTEXT_PROFILE_CORE)
         pg.display.gl_set_attribute(pg.GL_CONTEXT_FORWARD_COMPATIBLE_FLAG, True)
+
+        # Scaling stuff
         self.screen = pg.Surface(VIRTUAL_RES).convert((255, 65280, 16711680, 0))
         pg.display.set_mode(REAL_RES, pg.DOUBLEBUF|pg.OPENGL)
-        '''
+        
         self.clock = pg.time.Clock()
         self.delta_time = 1
 
         self.bg = pg.image.load('assets/map.png').convert_alpha()
+        self.bg = pg.transform.scale(self.bg, VIRTUAL_RES)
         self.bush = pg.image.load('assets/bush.png').convert_alpha()
+        #self.bush = pg.transform.scale(self.bush, VIRTUAL_RES)
         self.tree = pg.image.load('assets/tree.png').convert_alpha()
+        self.tree = pg.transform.scale(self.tree, (71, 85))
         
         self.new_game()
-        '''
+        
         self.ctx = moderngl.create_context()
         texture_coordinates = [0, 1,  1, 1,
                             0, 0,  1, 0]
@@ -46,16 +52,16 @@ class Game:
         self.screen_texture.repeat_x = False
         self.screen_texture.repeat_y = False
 
-        #vbo = self.ctx.buffer(struct.pack('8f', *world_coordinates))
-        #uvmap = self.ctx.buffer(struct.pack('8f', *texture_coordinates))
-        #ibo= self.ctx.buffer(struct.pack('6I', *render_indices))
+        vbo = self.ctx.buffer(struct.pack('8f', *world_coordinates))
+        uvmap = self.ctx.buffer(struct.pack('8f', *texture_coordinates))
+        ibo= self.ctx.buffer(struct.pack('6I', *render_indices))
 
-        #vao_content = [
-        #    (vbo, '2f', 'vert'),
-        #    (uvmap, '2f', 'in_text')
-        #]
+        vao_content = [
+            (vbo, '2f', 'vert'),
+            (uvmap, '2f', 'in_text')
+        ]
 
-        #self.vao = self.ctx.vertex_array(self.prog, vao_content, ibo)
+        self.vao = self.ctx.vertex_array(self.prog, vao_content, ibo)
 
     def render(self):
         texture_data = self.screen.get_view('1')
@@ -64,15 +70,15 @@ class Game:
         self.screen_texture.use()
         self.vao.render()
         pg.display.flip()
-    '''
+    
 
     def new_game(self):
         self.player = Player(self)
 
     def update(self):
         self.player.update()
-        #self.render()
-        pg.display.flip()
+        self.render()
+        #pg.display.flip()
         self.delta_time = self.clock.tick(FPS)
         pg.display.set_caption(f'{self.clock.get_fps() :.1f}')
 
@@ -83,9 +89,7 @@ class Game:
         self.player.draw()
 
         self.screen.blit(self.tree, (0, 0))
-        self.screen.blit(self.bush, (125, (REAL_HEIGHT-120)))
-        #self.object_renderer.draw()
-        #self.map.draw()
+        #self.screen.blit(self.bush, (125, (REAL_HEIGHT-120)))
 
     def check_events(self):
         for event in pg.event.get():

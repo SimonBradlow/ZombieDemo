@@ -11,7 +11,7 @@ DT_SHIFT = 10 # bitshift to divide by 1024
 FPS = 60 # how fast you want the game to run
 ANIMATION_DT = 1000 # how long before next animation frame
 
-PLAYER_POS = 1.5, 5  # mini_map
+PLAYER_POS = HALF_WIDTH, HALF_HEIGHT  # mini_map
 PLAYER_ANGLE = 0
 PLAYER_SPEED = 0.4
 PLAYER_ROT_SPEED = 0.002
