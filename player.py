@@ -36,6 +36,9 @@ class Player:
         moving_sprite_sheet_img = pg.image.load('assets/run_gun.png').convert_alpha()
         moving_sprite_sheet = ss.SpriteSheet(moving_sprite_sheet_img)
 
+        shadow_img = pg.image.load('assets/shadow.png').convert_alpha()
+        shadow_sheet = ss.SpriteSheet(shadow_img)
+
         # Animation Vars
         # 2d arrays storing sprite lists for each direction
         self.idle_animation_lists = []
@@ -79,6 +82,11 @@ class Player:
                                                             self.SPRITE_SCALE))
             self.moving_animation_lists.append(tmp_list)
 
+        self.shadow = shadow_sheet.get_image(0, 0, 
+                                             self.SPRITE_WIDTH, 
+                                             self.SPRITE_HEIGHT, 
+                                             self.SPRITE_SCALE)
+
         # Set player position to center
         self.x = (REAL_WIDTH // 2)
         self.y = (REAL_HEIGHT // 2)
@@ -96,7 +104,10 @@ class Player:
         self.current_shooting_step = (self.current_shooting_step+1) % 48
 
     def draw(self):
-        # draw sprite
+        # draw shadow
+        self.screen.blit(self.shadow, (self.truex, self.truey))
+
+        # draw sprite (over shadow)
         if self.shooting: # shooting
             self.screen.blit(self.shooting_animation_lists[self.shooting_rangle][self.current_shooting_step//6], 
                              (self.truex, self.truey))
@@ -106,6 +117,7 @@ class Player:
         else: # idle
             self.screen.blit(self.idle_animation_lists[self.idle_rangle][self.current_idle_step//16], 
                              (self.truex, self.truey))
+
 
         # draw line for mouse angle
         #WHITE = (255, 255, 255)

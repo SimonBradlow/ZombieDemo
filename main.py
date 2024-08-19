@@ -6,9 +6,9 @@ from settings import *
 from player import *
 
 class Game:
+    # TODO: Fix map for area bounding clarity & Consistency
     def __init__(self):
         pg.init()
-        #pg.mouse.set_visible(False)
         self.screen = pg.display.set_mode(REAL_RES)
         '''
         pg.display.gl_set_attribute(pg.GL_CONTEXT_MAJOR_VERSION, 3)
@@ -25,6 +25,11 @@ class Game:
         self.bush = pg.image.load('assets/bush.png').convert_alpha()
         self.tree = pg.image.load('assets/tree.png').convert_alpha()
         
+        # Cursor
+        pg.mouse.set_visible(False)
+        self.cursor_img = pg.image.load('assets/crosshair.png').convert_alpha()
+        self.cursor = self.cursor_img.get_rect()
+
         self.new_game()
         '''
         self.ctx = moderngl.create_context()
@@ -71,6 +76,7 @@ class Game:
 
     def update(self):
         self.player.update()
+        self.cursor.center = pg.mouse.get_pos()
         #self.render()
         pg.display.flip()
         self.delta_time = self.clock.tick(FPS)
@@ -86,6 +92,8 @@ class Game:
         self.screen.blit(self.bush, (125, (REAL_HEIGHT-120)))
         #self.object_renderer.draw()
         #self.map.draw()
+
+        self.screen.blit(self.cursor_img, self.cursor)
 
     def check_events(self):
         for event in pg.event.get():
