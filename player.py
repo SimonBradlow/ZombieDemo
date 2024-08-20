@@ -1,6 +1,7 @@
 from settings import *
 import pygame as pg
 import spritesheet as ss
+from projectile import *
 import math
 
 class Player:
@@ -10,6 +11,7 @@ class Player:
         self.x, self.y = PLAYER_POS
         self.mx, self.my = (0, 0) # Mouse position
         self.angle = PLAYER_ANGLE
+        self.radians = 0
         self.SPRITE_WIDTH, self.SPRITE_HEIGHT, self.SPRITE_SCALE = 48, 64, 3
         # Offset of center of sprite from (0,0) of sprite
         self.X_OFFSET = (self.SPRITE_WIDTH*self.SPRITE_SCALE)/2
@@ -17,7 +19,6 @@ class Player:
         # Coordinates of top left of sprite, this is where we draw the sprite
         self.truex = self.x - self.X_OFFSET
         self.truey = self.y - self.Y_OFFSET
-
         # Converted relative angle for sprite rotation
         # Not actual angles, but the index of the sprites rotation
         self.idle_rangle = 0
@@ -25,6 +26,10 @@ class Player:
         self.moving_rangle = 0
         self.shooting = False
         self.moving = False
+
+        # Projectile group
+        self.projectiles = pg.sprite.Group()
+        self.projectiles_bloom = pg.sprite.Group()
 
         # Load images
         idle_sprite_sheet_img = pg.image.load('assets/idle_gun.png').convert_alpha()
@@ -53,6 +58,7 @@ class Player:
         # current frame of animation
         self.current_idle_step = 0
         self.current_shooting_step = 0
+        self.current_moving_step = 0
 
         # Process sprite sheets into lists
         for i in range(idle_animation_rows):
@@ -94,30 +100,46 @@ class Player:
     def update(self):
         self.movement()
         self.mouse_control()
+        self.projectiles.update()
+        self.projectiles_bloom.update()
 
         # angle normalization to match assets/idle.png
         self.idle_rangle = int(abs(((self.angle + 150) % 360) - 360) // 60)
         self.shooting_rangle = int(abs(((self.angle + 157.5) % 360) - 360) // 45)
+        
+        # projectile group
+        if self.shooting:
+            if (self.current_shooting_step%12 == 0):
+                self.projectiles.add(Projectile(self.x, self.y, self.radians, (255, 255, 255, 255), 6, 6))
+                self.projectiles_bloom.add(Projectile(self.x, self.y, self.radians, (215, 135, 0, 200), 9, 9))
+                self.projectiles_bloom.add(Projectile(self.x, self.y, self.radians, (255, 255, 0, 76), 12, 12))
+            # hacky deltatime nonsense
+            self.current_shooting_step = (self.current_shooting_step+1) % 48
+        else:
+            self.current_shooting_step = 0
 
         # hacky deltatime nonsense - PLEASE FIX
         self.current_idle_step = (self.current_idle_step+1) % 128
-        self.current_shooting_step = (self.current_shooting_step+1) % 48
+        self.current_moving_step = (self.current_moving_step+1) % 48
 
     def draw(self):
         # draw shadow
         self.screen.blit(self.shadow, (self.truex, self.truey))
+
+        # Projectiles
+        self.projectiles_bloom.draw(self.screen)
+        self.projectiles.draw(self.screen)
 
         # draw sprite (over shadow)
         if self.shooting: # shooting
             self.screen.blit(self.shooting_animation_lists[self.shooting_rangle][self.current_shooting_step//6], 
                              (self.truex, self.truey))
         elif self.moving: #moving
-            self.screen.blit(self.moving_animation_lists[self.moving_rangle][self.current_shooting_step//6], 
+            self.screen.blit(self.moving_animation_lists[self.moving_rangle][self.current_moving_step//6], 
                              (self.truex, self.truey))
         else: # idle
             self.screen.blit(self.idle_animation_lists[self.idle_rangle][self.current_idle_step//16], 
                              (self.truex, self.truey))
-
 
         # draw line for mouse angle
         #WHITE = (255, 255, 255)
@@ -133,25 +155,25 @@ class Player:
             self.moving = True # Update flag
             self.moving_rangle = 3 # Assign sprite rotation index
             num_key_pressed += 1 # key press counter for diagonal movement
-            if self.y > REAL_HEIGHT/6: # bounding box
+            if self.y > REAL_HEIGHT/9: # bounding box
                 dy += -speed
         if keys[pg.K_s] and not self.shooting:
             self.moving = True
             self.moving_rangle = 0
             num_key_pressed += 1
-            if self.y < (REAL_HEIGHT/6)*5:
+            if self.y < ((REAL_HEIGHT/5)*4)+10:
                 dy += speed
         if keys[pg.K_a] and not self.shooting:
             self.moving = True
             self.moving_rangle = 7
             num_key_pressed += 1
-            if self.x > REAL_WIDTH/8:
+            if self.x > (REAL_WIDTH/10)+5:
                 dx += -speed
         if keys[pg.K_d] and not self.shooting:
             self.moving = True
             self.moving_rangle = 6
             num_key_pressed += 1
-            if self.x < (REAL_WIDTH/8)*7:
+            if self.x < ((REAL_WIDTH/10)*9)-5:
                 dx += speed
 
         if num_key_pressed == -1:
@@ -181,6 +203,7 @@ class Player:
         self.mx, self.my = pg.mouse.get_pos()
         # Compute angle
         self.angle = math.atan2(self.x-self.mx, self.y-self.my)
+        self.radians = self.angle
         # Convert from radians into degrees
         self.angle %= 2*math.pi
         self.angle = math.degrees(self.angle)
