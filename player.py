@@ -4,8 +4,9 @@ import spritesheet as ss
 from projectile import *
 import math
 
-class Player:
+class Player(pg.sprite.Sprite):
     def __init__(self, game):
+        super().__init__()
         self.game = game
         self.screen = game.screen
         self.x, self.y = PLAYER_POS
@@ -29,7 +30,6 @@ class Player:
 
         # Projectile group
         self.projectiles = pg.sprite.Group()
-        self.projectiles_bloom = pg.sprite.Group()
 
         # Load images
         idle_sprite_sheet_img = pg.image.load('assets/idle_gun.png').convert_alpha()
@@ -43,6 +43,8 @@ class Player:
 
         shadow_img = pg.image.load('assets/shadow.png').convert_alpha()
         shadow_sheet = ss.SpriteSheet(shadow_img)
+
+        self.projectile_img = pg.image.load('assets/bullet.png').convert_alpha()
 
         # Animation Vars
         # 2d arrays storing sprite lists for each direction
@@ -101,7 +103,6 @@ class Player:
         self.movement()
         self.mouse_control()
         self.projectiles.update()
-        self.projectiles_bloom.update()
 
         # angle normalization to match assets/idle.png
         self.idle_rangle = int(abs(((self.angle + 150) % 360) - 360) // 60)
@@ -110,9 +111,7 @@ class Player:
         # projectile group
         if self.shooting:
             if (self.current_shooting_step%12 == 0):
-                self.projectiles.add(Projectile(self.x, self.y, self.radians, (255, 255, 255, 255), 6, 6))
-                self.projectiles_bloom.add(Projectile(self.x, self.y, self.radians, (215, 135, 0, 200), 9, 9))
-                self.projectiles_bloom.add(Projectile(self.x, self.y, self.radians, (255, 255, 0, 76), 12, 12))
+                self.projectiles.add(Projectile(self.projectile_img, self.x, self.y, self.radians))
             # hacky deltatime nonsense
             self.current_shooting_step = (self.current_shooting_step+1) % 48
         else:
@@ -127,7 +126,6 @@ class Player:
         self.screen.blit(self.shadow, (self.truex, self.truey))
 
         # Projectiles
-        self.projectiles_bloom.draw(self.screen)
         self.projectiles.draw(self.screen)
 
         # draw sprite (over shadow)

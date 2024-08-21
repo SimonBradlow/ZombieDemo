@@ -4,6 +4,7 @@ import pygame as pg
 import sys
 from settings import *
 from player import *
+from enemy import *
 
 class Game:
     # TODO: Fix map for area bounding clarity & Consistency
@@ -73,9 +74,12 @@ class Game:
 
     def new_game(self):
         self.player = Player(self)
+        self.enemies = pg.sprite.Group()
+        self.enemies.add(Enemy(self, REAL_WIDTH/4, REAL_HEIGHT/4, 32, 48))
 
     def update(self):
         self.player.update()
+        self.enemies.update()
         self.cursor.center = pg.mouse.get_pos()
         #self.render()
         pg.display.flip()
@@ -86,6 +90,7 @@ class Game:
         self.screen.fill((114, 117, 27))
         self.screen.blit(self.bg, (0, 0))
 
+        self.enemies.draw(self.screen)
         self.player.draw()
 
         self.screen.blit(self.tree, (0, 0))

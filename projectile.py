@@ -4,10 +4,9 @@ import math
 
 #create class for squares
 class Projectile(pg.sprite.Sprite):
-    def __init__(self, x, y, angle, color, w, h):
+    def __init__(self, img, x, y, angle):
         pg.sprite.Sprite.__init__(self)
-        self.image = pg.Surface((w, h), pg.SRCALPHA)
-        self.image.fill(color)
+        self.image = img
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         self.angle = angle
