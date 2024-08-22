@@ -5,7 +5,7 @@ from projectile import *
 import math
 
 class Enemy(pg.sprite.Sprite):
-    def __init__(self, game, x, y, w, h):
+    def __init__(self, game, x, y):
         super().__init__()
         self.game = game
         self.x, self.y = (x, y)

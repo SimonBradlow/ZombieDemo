@@ -77,7 +77,7 @@ class Game:
     def new_game(self):
         self.player = Player(self)
         self.enemies = pg.sprite.Group()
-        self.enemies.add(Enemy(self, REAL_WIDTH/4, REAL_HEIGHT/4, 32, 48))
+        self.enemies.add(Enemy(self, REAL_WIDTH/4, REAL_HEIGHT/4))
 
     def update(self):
         self.player.update()
