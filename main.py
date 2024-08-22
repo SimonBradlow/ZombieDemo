@@ -7,6 +7,8 @@ from player import *
 from enemy import *
 
 class Game:
+    # TODO: Load sprite images in separate module from __init__ to 
+    #       optimize initialization of enemies
     # TODO: Fix map for area bounding clarity & Consistency
     def __init__(self):
         pg.init()
