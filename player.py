@@ -45,6 +45,8 @@ class Player(pg.sprite.Sprite):
         shadow_sheet = ss.SpriteSheet(shadow_img)
 
         self.projectile_img = pg.image.load('assets/bullet.png').convert_alpha()
+        self.bullet_offsets = [(-4, 10), (-14, 6), (-14, -2), (-11, -7), 
+                               (5, -13), (16, -6), (15, -2), (13, 8)]
 
         # Animation Vars
         # 2d arrays storing sprite lists for each direction
@@ -111,7 +113,10 @@ class Player(pg.sprite.Sprite):
         # projectile group
         if self.shooting:
             if (self.current_shooting_step%12 == 0):
-                self.projectiles.add(Projectile(self.projectile_img, self.x, self.y, self.radians))
+                self.projectiles.add(Projectile(self.projectile_img, 
+                                                self.x + (self.SPRITE_SCALE*self.bullet_offsets[self.shooting_rangle][0]), 
+                                                self.y + (self.SPRITE_SCALE*self.bullet_offsets[self.shooting_rangle][1]), 
+                                                self.radians))
             # hacky deltatime nonsense
             self.current_shooting_step = (self.current_shooting_step+1) % 48
         else:
