@@ -33,6 +33,8 @@ class Game:
         self.cursor_img = pg.image.load('assets/crosshair.png').convert_alpha()
         self.cursor = self.cursor_img.get_rect()
 
+        pg.event.set_allowed([pg.QUIT, pg.KEYDOWN, pg.KEYUP, pg.MOUSEMOTION, pg.MOUSEBUTTONUP, pg.MOUSEBUTTONDOWN])
+
         self.new_game()
         '''
         self.ctx = moderngl.create_context()
@@ -82,14 +84,13 @@ class Game:
     def update(self):
         self.player.update()
         self.enemies.update()
-        self.cursor.center = pg.mouse.get_pos()
         #self.render()
         pg.display.flip()
         self.delta_time = self.clock.tick(FPS)
         pg.display.set_caption(f'{self.clock.get_fps() :.1f}')
 
     def draw(self):
-        self.screen.fill((114, 117, 27))
+        #self.screen.fill((114, 117, 27))
         self.screen.blit(self.bg, (0, 0))
 
         self.enemies.draw(self.screen)
@@ -104,6 +105,9 @@ class Game:
 
     def check_events(self):
         for event in pg.event.get():
+            if event.type == pg.MOUSEMOTION:
+                self.cursor.center = event.pos
+                self.player.mouse_control()
             if event.type == pg.MOUSEBUTTONDOWN:
                 self.player.shooting = True
             if event.type == pg.MOUSEBUTTONUP:
@@ -113,7 +117,7 @@ class Game:
                 sys.exit()
 
     def run(self):
-        while True:
+        while 1:
             self.check_events()
             self.update()
             self.draw()

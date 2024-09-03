@@ -103,7 +103,6 @@ class Player(pg.sprite.Sprite):
 
     def update(self):
         self.movement()
-        self.mouse_control()
         self.projectiles.update()
 
         # angle normalization to match assets/idle.png
@@ -203,7 +202,7 @@ class Player(pg.sprite.Sprite):
 
     def mouse_control(self):
         # Get mouse pos
-        self.mx, self.my = pg.mouse.get_pos()
+        self.mx, self.my = self.game.cursor.centerx, self.game.cursor.centery
         # Compute angle
         self.angle = math.atan2(self.x-self.mx, self.y-self.my)
         self.radians = self.angle
