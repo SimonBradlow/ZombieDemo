@@ -10,6 +10,7 @@ class Game:
     # TODO: Load sprite images in separate module from __init__ to 
     #       optimize initialization of enemies
     # TODO: Fix map for area bounding clarity & Consistency
+    # TODO: make any sprite dirty if possible
     def __init__(self):
         pg.init()
         self.screen = pg.display.set_mode(REAL_RES)
@@ -109,8 +110,12 @@ class Game:
                 self.cursor.center = event.pos
                 self.player.mouse_control()
             if event.type == pg.MOUSEBUTTONDOWN:
+            #    self.cursor.center = event.pos
+            #    self.player.mouse_control()
                 self.player.shooting = True
             if event.type == pg.MOUSEBUTTONUP:
+            #    self.cursor.center = event.pos
+            #    self.player.mouse_control()
                 self.player.shooting = False
             if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
                 pg.quit()

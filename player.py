@@ -103,6 +103,7 @@ class Player(pg.sprite.Sprite):
 
     def update(self):
         self.movement()
+        #self.mouse_control()
         self.projectiles.update()
 
         # angle normalization to match assets/idle.png
@@ -153,33 +154,34 @@ class Player(pg.sprite.Sprite):
 
         keys = pg.key.get_pressed()
         num_key_pressed = -1
-        if keys[pg.K_w] and not self.shooting:
+        if (not self.shooting) and keys[pg.K_w]:
             self.moving = True # Update flag
             self.moving_rangle = 3 # Assign sprite rotation index
             num_key_pressed += 1 # key press counter for diagonal movement
             if self.y > REAL_HEIGHT/9: # bounding box
                 dy += -speed
-        if keys[pg.K_s] and not self.shooting:
+        if (not self.shooting) and keys[pg.K_s]:
             self.moving = True
             self.moving_rangle = 0
             num_key_pressed += 1
             if self.y < ((REAL_HEIGHT/5)*4)+10:
                 dy += speed
-        if keys[pg.K_a] and not self.shooting:
+        if (not self.shooting) and keys[pg.K_a]:
             self.moving = True
             self.moving_rangle = 7
             num_key_pressed += 1
             if self.x > (REAL_WIDTH/10)+5:
                 dx += -speed
-        if keys[pg.K_d] and not self.shooting:
+        if (not self.shooting) and keys[pg.K_d]:
             self.moving = True
             self.moving_rangle = 6
             num_key_pressed += 1
             if self.x < ((REAL_WIDTH/10)*9)-5:
                 dx += speed
 
-        if num_key_pressed == -1:
+        if self.moving and num_key_pressed == -1:
             self.moving = False
+            self.mouse_control()
 
         # diag move correction
         # sin(45) and cos(45) are the same magic number
@@ -202,7 +204,9 @@ class Player(pg.sprite.Sprite):
 
     def mouse_control(self):
         # Get mouse pos
-        self.mx, self.my = self.game.cursor.centerx, self.game.cursor.centery
+        #self.game.cursor.center = pg.mouse.get_pos()
+        #self.mx, self.my = self.game.cursor.centerx, self.game.cursor.centery
+        self.mx, self.my = pg.mouse.get_pos()
         # Compute angle
         self.angle = math.atan2(self.x-self.mx, self.y-self.my)
         self.radians = self.angle
