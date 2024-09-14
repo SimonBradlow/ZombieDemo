@@ -5,6 +5,7 @@ import sys
 from settings import *
 from player import *
 from enemy import *
+from rat import *
 
 class Game:
     # TODO: Load sprite images in separate module from __init__ to 
@@ -79,11 +80,13 @@ class Game:
 
     def new_game(self):
         self.player = Player(self)
+        self.rat = Rat(self, REAL_WIDTH/4, REAL_HEIGHT/4)
         self.enemies = pg.sprite.Group()
-        self.enemies.add(Enemy(self, REAL_WIDTH/4, REAL_HEIGHT/4))
+        self.enemies.add(self.rat)
 
     def update(self):
         self.player.update()
+        #self.rat.update()
         self.enemies.update()
         #self.render()
         pg.display.flip()
@@ -94,8 +97,13 @@ class Game:
         #self.screen.fill((114, 117, 27))
         self.screen.blit(self.bg, (0, 0))
 
-        self.enemies.draw(self.screen)
+        self.rat.draw_rocket_zone()
         self.player.draw()
+        #self.rat.projectiles.draw(self.screen)
+        self.rat.draw_shadow()
+        self.enemies.draw(self.screen)
+        self.rat.draw()
+        self.player.projectiles.draw(self.screen)
 
         self.screen.blit(self.tree, (0, 0))
         self.screen.blit(self.bush, (125, (REAL_HEIGHT-120)))

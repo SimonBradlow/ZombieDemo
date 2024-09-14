@@ -27,6 +27,9 @@ class Player(pg.sprite.Sprite):
         self.moving_rangle = 0
         self.shooting = False
         self.moving = False
+        self.is_hit = False
+        self.hit_timer = 0
+        self.flash_duration = 100
 
         # Projectile group
         self.projectiles = pg.sprite.Group()
@@ -44,6 +47,9 @@ class Player(pg.sprite.Sprite):
         shadow_img = pg.image.load('assets/shadow.png').convert_alpha()
         shadow_sheet = ss.SpriteSheet(shadow_img)
 
+        particle_img = pg.image.load('assets/particle2.png').convert_alpha()
+        particle_sheet = ss.SpriteSheet(particle_img)
+
         self.projectile_img = pg.image.load('assets/bullet.png').convert_alpha()
         self.bullet_offsets = [(-4, 10), (-14, 6), (-14, -2), (-11, -7), 
                                (5, -13), (16, -6), (15, -2), (13, 8)]
@@ -53,6 +59,7 @@ class Player(pg.sprite.Sprite):
         self.idle_animation_lists = []
         self.shooting_animation_lists = []
         self.moving_animation_lists = []
+        self.particle_list = []
 
         # number of frames per animation
         animation_steps = 8
@@ -92,6 +99,12 @@ class Player(pg.sprite.Sprite):
                                                             self.SPRITE_SCALE))
             self.moving_animation_lists.append(tmp_list)
 
+        for i in range(8):
+            self.particle_list.append(particle_sheet.get_image(0, i, 
+                                                               64, 
+                                                               64, 
+                                                               1.5))
+
         self.shadow = shadow_sheet.get_image(0, 0, 
                                              self.SPRITE_WIDTH, 
                                              self.SPRITE_HEIGHT, 
@@ -101,12 +114,16 @@ class Player(pg.sprite.Sprite):
         self.x = (REAL_WIDTH // 2)
         self.y = (REAL_HEIGHT // 2)
 
+        self.rect = pg.Rect((0,0), (54, 78))
+        self.rect.center = (self.x, self.y)
+
     def update(self):
         self.movement()
         #self.mouse_control()
         self.projectiles.update()
 
         # angle normalization to match assets/idle.png
+        # TODO: move this to mouse_control() ??
         self.idle_rangle = int(abs(((self.angle + 150) % 360) - 360) // 60)
         self.shooting_rangle = int(abs(((self.angle + 157.5) % 360) - 360) // 45)
         
@@ -114,6 +131,7 @@ class Player(pg.sprite.Sprite):
         if self.shooting:
             if (self.current_shooting_step%12 == 0):
                 self.projectiles.add(Projectile(self.projectile_img, 
+                                                self.particle_list,
                                                 self.x + (self.SPRITE_SCALE*self.bullet_offsets[self.shooting_rangle][0]), 
                                                 self.y + (self.SPRITE_SCALE*self.bullet_offsets[self.shooting_rangle][1]), 
                                                 self.radians))
@@ -126,27 +144,42 @@ class Player(pg.sprite.Sprite):
         self.current_idle_step = (self.current_idle_step+1) % 128
         self.current_moving_step = (self.current_moving_step+1) % 48
 
+        #csprite = pg.sprite.spritecollideany(self, self.game.rat.projectiles)
+        #if csprite is not None:
+        #    csprite.kill()
+
     def draw(self):
         # draw shadow
         self.screen.blit(self.shadow, (self.truex, self.truey))
 
         # Projectiles
-        self.projectiles.draw(self.screen)
+        #self.projectiles.draw(self.screen) # CALLED IN MAIN NOW
 
         # draw sprite (over shadow)
         if self.shooting: # shooting
-            self.screen.blit(self.shooting_animation_lists[self.shooting_rangle][self.current_shooting_step//6], 
-                             (self.truex, self.truey))
+            res_img = self.shooting_animation_lists[self.shooting_rangle][self.current_shooting_step//6]
         elif self.moving: #moving
-            self.screen.blit(self.moving_animation_lists[self.moving_rangle][self.current_moving_step//6], 
-                             (self.truex, self.truey))
+            res_img = self.moving_animation_lists[self.moving_rangle][self.current_moving_step//6]
         else: # idle
-            self.screen.blit(self.idle_animation_lists[self.idle_rangle][self.current_idle_step//16], 
-                             (self.truex, self.truey))
+            res_img = self.idle_animation_lists[self.idle_rangle][self.current_idle_step//16]
+
+        # Flash logic: if hit, switch to a dynamically created white image
+        if self.is_hit:
+            current_time = pg.time.get_ticks()
+            if current_time - self.hit_timer > self.flash_duration:
+                self.is_hit = False
+            else:
+                tmp_img = res_img.copy()
+                tmp_img.fill((96, 96, 96), special_flags=pg.BLEND_RGB_ADD)
+                res_img = tmp_img
+
+        self.screen.blit(res_img, (self.truex, self.truey))
 
         # draw line for mouse angle
         #WHITE = (255, 255, 255)
         #pg.draw.line(self.screen, WHITE, (self.x, self.y), (self.mx, self.my))
+        # draw hitbox
+        #pg.draw.rect(self.screen, WHITE, self.rect)
 
     def movement(self):
         dx, dy = 0, 0
@@ -201,6 +234,7 @@ class Player(pg.sprite.Sprite):
         self.y += dy
         self.truex = self.x - self.X_OFFSET
         self.truey = self.y - self.Y_OFFSET
+        self.rect.center = (self.x, self.y)
 
     def mouse_control(self):
         # Get mouse pos
@@ -213,3 +247,7 @@ class Player(pg.sprite.Sprite):
         # Convert from radians into degrees
         self.angle %= 2*math.pi
         self.angle = math.degrees(self.angle)
+
+    def take_hit(self):
+        self.is_hit = True
+        self.hit_timer = pg.time.get_ticks()
