@@ -37,6 +37,7 @@ class Rat(pg.sprite.Sprite):
         self.truey = self.y - self.Y_OFFSET
         self.visualcx, self.visualcy = self.x+24, self.y+96
 
+        # TODO: Possibly store all sprites in a single dict?
         # Load sprite sheets
         idle_sheet_img = pg.image.load('assets/rat/Idle.png').convert_alpha()
         idle_sheet = ss.SpriteSheet(idle_sheet_img)
@@ -135,6 +136,7 @@ class Rat(pg.sprite.Sprite):
                                              self.SPRITE_HEIGHT, 
                                              self.SPRITE_SCALE)
 
+        # collision surface for bite
         self.bite_coll_surf = pg.sprite.Sprite()
         self.bite_coll_surf.rect = pg.Rect(self.visualcx+44+self.bite_left_adj, self.visualcy-29, 184, 90)
 
@@ -224,6 +226,12 @@ class Rat(pg.sprite.Sprite):
         # AI descision
         self.decide_action()
 
+        # DEBUG CIRCLE FOR VISUALC
+        #if self.face_right:
+        #    pg.draw.circle(self.game.screen, (255, 255, 255), (self.visualcx, self.visualcy), 3)
+        #else:
+        #    pg.draw.circle(self.game.screen, (255, 255, 255), (self.visualcx-48, self.visualcy), 3)
+
     def draw(self):
         # rocket trail
         if self.shooting:
@@ -256,8 +264,10 @@ class Rat(pg.sprite.Sprite):
     def move_towards_player(self):
         VELOCITY         = 5
         LERP_FACTOR      = 0.05
-        minimum_distance = 190
+        minimum_distance = 120
         maximum_distance = 2000
+        if not self.face_right:
+            minimum_distance += 48
 
         ppos = (self.game.player.x, self.game.player.y)
         fpos = (self.visualcx, self.visualcy)

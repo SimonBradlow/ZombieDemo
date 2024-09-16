@@ -29,6 +29,7 @@ class Player(pg.sprite.Sprite):
         self.shooting = False
         self.moving = False
         self.is_hit = False
+        self.has_hit = False
         self.hit_timer = 0
         self.flash_duration = 100
 
@@ -260,4 +261,5 @@ class Player(pg.sprite.Sprite):
 
     def take_hit(self):
         self.is_hit = True
+        self.has_hit = True
         self.hit_timer = pg.time.get_ticks()
