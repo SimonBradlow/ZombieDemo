@@ -25,12 +25,13 @@ def calculate_control_point(start, angle, distance):
 
 #create class for squares
 class RatProjectile(pg.sprite.Sprite):
-    def __init__(self, game, img, ilist, sx, sy, ex, ey, cx, cy):
+    def __init__(self, game, img, ilist, ilist2, sx, sy, ex, ey, cx, cy):
         pg.sprite.Sprite.__init__(self)
         self.game = game
         self.original_image = img
         self.image = img
         self.particle_list = ilist
+        self.hit_particle_list = ilist2
         self.rect = self.image.get_rect()
         self.start_point = (sx, sy)
         self.end_point = (ex, ey)
@@ -67,6 +68,8 @@ class RatProjectile(pg.sprite.Sprite):
                 if distance < 40:
                     #self.game.player.health -= 10
                     self.game.player.take_hit()
+                    self.particle_list = self.hit_particle_list
+                    self.end_point = (self.end_point[0], self.end_point[1]-30)
 
             self.t = 1
             self.particle_step = (self.particle_step+1) % 24

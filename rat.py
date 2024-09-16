@@ -12,14 +12,18 @@ class Rat(pg.sprite.Sprite):
         self.x, self.y = (x, y)
         self.face_right = True
         self.left_adj = 0
+        self.bite_left_adj = 0
         self.down= False
         self.moving = False
         self.shooting = False
         self.is_hit = False
+        self.biting = False
+        self.has_bit = False
         self.hit_timer = 0
         self.flash_duration = 100
         self.angle = 0
         self.radians = 0
+        self.distance = 0
 
         self.SPRITE_WIDTH = 96
         self.SPRITE_HEIGHT = 96
@@ -44,13 +48,22 @@ class Rat(pg.sprite.Sprite):
         trail_sheet = ss.SpriteSheet(trail_sheet_img)
         particle_sheet_img = pg.image.load('assets/rat/particle.png').convert_alpha()
         particle_sheet = ss.SpriteSheet(particle_sheet_img)
+        hit_particle_sheet_img = pg.image.load('assets/rat/hitparticle.png').convert_alpha()
+        hit_particle_sheet = ss.SpriteSheet(hit_particle_sheet_img)
+        bite_sheet_img = pg.image.load('assets/rat/attack3.png').convert_alpha()
+        bite_sheet = ss.SpriteSheet(bite_sheet_img)
+        bite_particle_img = pg.image.load('assets/rat/bite.png').convert_alpha()
+        bite_particle_sheet = ss.SpriteSheet(bite_particle_img)
 
         # Process sprite sheets into lists
         self.idle_list = []
         self.walk_list = []
         self.trail_list = []
         self.particle_list = []
+        self.hit_particle_list = []
         self.hurt_list = []
+        self.bite_list = []
+        self.bite_particle_list = []
 
         for i in range(4):
             self.idle_list.append(idle_sheet.get_image(0, i, 
@@ -77,11 +90,29 @@ class Rat(pg.sprite.Sprite):
                                                          64, 
                                                          64, 
                                                          1.5))
+        for i in range(8):
+            self.hit_particle_list.append(hit_particle_sheet.get_image(0, i, 
+                                                         64, 
+                                                         64, 
+                                                         1))
+        for i in range(4):
+            self.bite_list.append(bite_sheet.get_image(0, i, 
+                                                       self.SPRITE_WIDTH, 
+                                                       self.SPRITE_HEIGHT, 
+                                                       self.SPRITE_SCALE))
+
+        for i in range(5):
+            self.bite_particle_list.append(bite_particle_sheet.get_image(0, i, 
+                                                         64, 
+                                                         64, 
+                                                         3))
         
         # current frame index
         self.current_idle_step = 0
         self.current_walk_step = 0
         self.current_shoot_step = 0
+        self.current_bite_step = 0
+        self.current_bite_particle_step = 0
 
         # init self sprite values
         self.image = self.idle_list[0]
@@ -104,72 +135,71 @@ class Rat(pg.sprite.Sprite):
                                              self.SPRITE_HEIGHT, 
                                              self.SPRITE_SCALE)
 
+        self.bite_coll_surf = pg.sprite.Sprite()
+        self.bite_coll_surf.rect = pg.Rect(self.visualcx+44+self.bite_left_adj, self.visualcy-29, 184, 90)
+
     def update(self):
         self.projectiles.update()
         keys = pg.key.get_pressed()
+
+        # check for direction
         if self.visualcx > self.game.player.x:
             self.face_right = False
             self.left_adj = 48
+            self.bite_left_adj = -320 
         else:
             self.face_right = True
             self.left_adj = 0
+            self.bite_left_adj = 0
         
         # input on T key to debug shooting
         if keys[pg.K_t] and not self.shooting:
-            self.shooting = True
-            # Calculate angle from cannon to player
-            self.radians = math.atan2((self.x + (self.projectile_offset[0]*self.SPRITE_SCALE)) - self.game.player.x, 
-                                      (self.y + (self.projectile_offset[1]*self.SPRITE_SCALE)) - self.game.player.y)
+            self.shoot()
 
-            # Points
-            start_point = ((self.x + (self.projectile_offset[0]*self.SPRITE_SCALE)), 
-                           (self.y + (self.projectile_offset[1]*self.SPRITE_SCALE)))  # Starting point
-            end_point = (self.game.player.x, 
-                         self.game.player.y)    # End point
-            tangent_angle = math.radians(350)  # Angle of tangent in radians
-            control_distance = 300  # How far the control point is from the start point
-
-            # fix points if facing left
-            if not self.face_right:
-                start_point = ((self.x - (self.projectile_offset[0]*self.SPRITE_SCALE)), 
-                               (self.y + (self.projectile_offset[1]*self.SPRITE_SCALE)))  # Starting point
-                tangent_angle = math.radians(190)
-
-            # Calculate the control point
-            control_point = calculate_control_point(start_point, 
-                                                    tangent_angle, 
-                                                    control_distance)
-
-            # create projectile for shot and add to projectile group
-            #img = pg.transform.rotate(self.projectile_sprite_list[0], self.angle)
-            self.projectiles.add(RatProjectile(self.game,
-                                               self.rocket_image, 
-                                               self.particle_list,
-                                               start_point[0], 
-                                               start_point[1],
-                                               end_point[0],
-                                               end_point[1]+30,
-                                               control_point[0],
-                                               control_point[1]))
-
+        if keys[pg.K_y] and not self.biting and not self.moving:
+            self.bite()
 
         # Increment frame counters
         self.current_idle_step = (self.current_idle_step+1) % 64
         self.current_walk_step = (self.current_walk_step+1) % 36
         self.current_shoot_step = (self.current_shoot_step+1) % 12
+        self.current_bite_step = (self.current_bite_step+1) % 32
+        self.current_bite_particle_step = (self.current_bite_particle_step+1) % 10
 
+        # change values based on current frames
         if self.current_shoot_step == 11:
             self.shooting = False
+        if self.current_bite_step == 31 and self.biting:
+            self.biting = False
+            self.has_bit = True
+            self.current_bite_particle_step = 0
+            self.current_bite_Step = 0
+            self.bite_coll_surf.rect = pg.Rect(self.visualcx+44+self.bite_left_adj, self.visualcy-29, 184, 90)
+            if self.bite_coll_surf.rect.collidepoint((self.game.player.x, self.game.player.y)):
+                self.game.player.take_hit()
+        if self.current_bite_particle_step == 9 and self.has_bit:
+            self.has_bit = False
 
+        # change image based on action
         if self.moving:
             self.image = self.walk_list[self.current_walk_step//6]
         else: #idle
-            self.image = self.idle_list[self.current_idle_step//16]
+            if self.biting: #biting
+                self.image = self.bite_list[self.current_bite_step//8]
+            else: #fully idle
+                self.image = self.idle_list[self.current_idle_step//16]
+        
+        # draw bite particles
+        if self.has_bit:
+            #pg.draw.rect(self.game.screen, (255, 255, 255), self.bite_coll_surf.rect) #DEBUG RECT
+            self.screen.blit(self.bite_particle_list[self.current_bite_particle_step//2], (self.visualcx+40+self.bite_left_adj, self.visualcy-80))
+
 
         # flip self.image if facing left
         if not self.face_right:
             self.image = pg.transform.flip(self.image, True, False)
 
+        # collision surface for player bullets
         coll_surf = pg.sprite.Sprite()
         coll_surf.rect = pg.Rect(self.visualcx-self.left_adj-80, self.visualcy-50, 160, 100)
         csprite_list = pg.sprite.spritecollide(coll_surf, self.game.player.projectiles, False)
@@ -191,7 +221,7 @@ class Rat(pg.sprite.Sprite):
                 tmp_img.fill((96, 96, 96), special_flags=pg.BLEND_RGB_ADD)
                 self.image = tmp_img
 
-
+        # AI descision
         self.decide_action()
 
     def draw(self):
@@ -236,12 +266,12 @@ class Rat(pg.sprite.Sprite):
         follower_vector     = pg.math.Vector2(*fpos)
         new_follower_vector = pg.math.Vector2(*fpos)
 
-        distance = follower_vector.distance_to(target_vector)
-        if distance > minimum_distance+10:
+        self.distance = follower_vector.distance_to(target_vector)
+        if self.distance > minimum_distance+10:
             self.moving = True
-            direction_vector    = (target_vector - follower_vector) / distance
-            min_step            = max(0, distance - maximum_distance)
-            max_step            = distance - minimum_distance
+            direction_vector    = (target_vector - follower_vector) / self.distance
+            min_step            = max(0, self.distance - maximum_distance)
+            max_step            = self.distance - minimum_distance
             #step_distance       = min(max_step, max(min_step, VELOCITY))
             step_distance       = min_step + (max_step - min_step) * LERP_FACTOR
             new_follower_vector = follower_vector + direction_vector * step_distance
@@ -256,3 +286,45 @@ class Rat(pg.sprite.Sprite):
         self.truex = self.x - self.X_OFFSET
         self.truey = self.y - self.Y_OFFSET
         self.rect.center = (self.x, self.y)
+
+    def shoot(self):
+            self.shooting = True
+            # Calculate angle from cannon to player
+            self.radians = math.atan2((self.x + (self.projectile_offset[0]*self.SPRITE_SCALE)) - self.game.player.x, 
+                                      (self.y + (self.projectile_offset[1]*self.SPRITE_SCALE)) - self.game.player.y)
+
+            # Points
+            start_point = ((self.x + (self.projectile_offset[0]*self.SPRITE_SCALE)), 
+                           (self.y + (self.projectile_offset[1]*self.SPRITE_SCALE)))  # Starting point
+            end_point = (self.game.player.x, 
+                         self.game.player.y)    # End point
+            tangent_angle = math.radians(350)  # Angle of tangent in radians
+            control_distance = 300  # How far the control point is from the start point
+
+            # fix points if facing left
+            if not self.face_right:
+                start_point = ((self.x - (self.projectile_offset[0]*self.SPRITE_SCALE)), 
+                               (self.y + (self.projectile_offset[1]*self.SPRITE_SCALE)))  # Starting point
+                tangent_angle = math.radians(190)
+
+            # Calculate the control point
+            control_point = calculate_control_point(start_point, 
+                                                    tangent_angle, 
+                                                    control_distance)
+
+            # create projectile for shot and add to projectile group
+            #img = pg.transform.rotate(self.projectile_sprite_list[0], self.angle)
+            self.projectiles.add(RatProjectile(self.game,
+                                               self.rocket_image, 
+                                               self.particle_list,
+                                               self.hit_particle_list,
+                                               start_point[0], 
+                                               start_point[1],
+                                               end_point[0],
+                                               end_point[1]+30,
+                                               control_point[0],
+                                               control_point[1]))
+    def bite(self):
+            self.biting = True
+            self.current_bite_step = 0
+        

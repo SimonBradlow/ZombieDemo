@@ -25,6 +25,7 @@ class Player(pg.sprite.Sprite):
         self.idle_rangle = 0
         self.shooting_rangle = 0
         self.moving_rangle = 0
+        self.bullet_angle = 0
         self.shooting = False
         self.moving = False
         self.is_hit = False
@@ -122,14 +123,17 @@ class Player(pg.sprite.Sprite):
         #self.mouse_control()
         self.projectiles.update()
 
-        # angle normalization to match assets/idle.png
-        # TODO: move this to mouse_control() ??
-        self.idle_rangle = int(abs(((self.angle + 150) % 360) - 360) // 60)
-        self.shooting_rangle = int(abs(((self.angle + 157.5) % 360) - 360) // 45)
+
         
         # projectile group
         if self.shooting:
             if (self.current_shooting_step%12 == 0):
+                self.mx, self.my = pg.mouse.get_pos()
+                # Compute angle
+                x = self.x + (self.SPRITE_SCALE*self.bullet_offsets[self.shooting_rangle][0])
+                y = self.y + (self.SPRITE_SCALE*self.bullet_offsets[self.shooting_rangle][1])
+                self.bullet_angle = math.atan2(x-self.mx, y-self.my)
+
                 self.projectiles.add(Projectile(self.projectile_img, 
                                                 self.particle_list,
                                                 self.x + (self.SPRITE_SCALE*self.bullet_offsets[self.shooting_rangle][0]), 
@@ -177,7 +181,9 @@ class Player(pg.sprite.Sprite):
 
         # draw line for mouse angle
         #WHITE = (255, 255, 255)
-        #pg.draw.line(self.screen, WHITE, (self.x, self.y), (self.mx, self.my))
+        #x = self.x + (self.SPRITE_SCALE*self.bullet_offsets[self.shooting_rangle][0])
+        #y = self.y + (self.SPRITE_SCALE*self.bullet_offsets[self.shooting_rangle][1])
+        #pg.draw.line(self.screen, WHITE, (x, y), (self.mx, self.my))
         # draw hitbox
         #pg.draw.rect(self.screen, WHITE, self.rect)
 
@@ -247,6 +253,10 @@ class Player(pg.sprite.Sprite):
         # Convert from radians into degrees
         self.angle %= 2*math.pi
         self.angle = math.degrees(self.angle)
+
+        # angle normalization to match assets/idle.png
+        self.idle_rangle = int(abs(((self.angle + 150) % 360) - 360) // 60)
+        self.shooting_rangle = int(abs(((self.angle + 157.5) % 360) - 360) // 45)
 
     def take_hit(self):
         self.is_hit = True
